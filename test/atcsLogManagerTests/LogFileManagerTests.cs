@@ -8,7 +8,6 @@ namespace atcsLogManagerTests
     public class LogFileManagerTests
     {
         [TestMethod]
-        //[ExpectedException(typeof(NotImplementedException))]
         public void TestGetATCSLogs()
         {
             var atcsLogManager = new LogFileManager("C:\\Users\\erben\\Dropbox\\programming\\atcsLogManager\\testData");
