@@ -11,8 +11,7 @@ namespace atcsLogManagerTests
         //[ExpectedException(typeof(NotImplementedException))]
         public void TestGetATCSLogs()
         {
-            //C:\Users\erben\Dropbox\programming\atcsLogManager\testData
-            var atcsLogManager = new LogFileManager(null);
+            var atcsLogManager = new LogFileManager("C:\\Users\\erben\\Dropbox\\programming\\atcsLogManager\\testData");
             Assert.ThrowsException<NotImplementedException>(() => atcsLogManager.GetATCSLogs());
         }
     }
