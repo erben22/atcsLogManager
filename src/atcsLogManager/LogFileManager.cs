@@ -22,7 +22,7 @@ namespace atcsLogManager
                 var directory = System.IO.Path.GetDirectoryName(file);
 
                 Console.WriteLine("File is: {0}", filename);
-                string pattern = @"(\d{4})(\d{2})(\d{2})";
+                string pattern = @"(\d{4})(\d{2})(\d{2})$";
                 var fileNameParts = Regex.Split(filename, pattern);
 
                 if (fileNameParts.Length == 5)
@@ -30,9 +30,22 @@ namespace atcsLogManager
                     var atcsTerritory = fileNameParts[0];
                     var year = fileNameParts[1];
                     var month = fileNameParts[2];
+                    var day = fileNameParts[3];
+
+                    if (day == DateTime.Now.Day.ToString())
+                    {
+                        Console.WriteLine("  Filename {0} is for the current day, not processing", filename);
+                        continue;
+                    }
+
+                    if (IsFileInUse(file))
+                    {
+                        Console.WriteLine("  Filename {0} is in use, not processing", filename);
+                        continue;
+                    }
 
                     var zipFileName = directory + System.IO.Path.DirectorySeparatorChar + 
-                        atcsTerritory + year + month + ".zip";
+                    atcsTerritory + year + month + ".zip";
 
                     if (System.IO.File.Exists(zipFileName))
                     {
@@ -48,9 +61,44 @@ namespace atcsLogManager
                     else
                     {
                         Console.WriteLine("  zipFileName ({0}) does not exist", zipFileName);
+
+                        using (ZipArchive zipFile = ZipFile.Open(
+                                zipFileName, ZipArchiveMode.Create))
+                        {
+                            zipFile.CreateEntryFromFile(file,
+                                System.IO.Path.GetFileName(file));
+                        }
                     }
+
+                    var backupDir = System.IO.Path.Combine(directory, "backup");
+
+                    System.IO.Directory.CreateDirectory(backupDir);
+
+                    System.IO.File.Move(file, backupDir + 
+                        System.IO.Path.DirectorySeparatorChar + 
+                            System.IO.Path.GetFileName(file));
                 }
             }
+        }
+
+        protected virtual bool IsFileInUse(String file)
+        {
+            bool isInUse = false;
+
+            try
+            {
+                using (System.IO.FileStream fs = new System.IO.FileStream(
+                    file, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                {
+                    isInUse = fs.CanWrite;
+                }
+            }
+            catch (System.IO.IOException)
+            {
+                isInUse = true;
+            }
+
+            return isInUse;
         }
 
         public void ProcessDirectory()
