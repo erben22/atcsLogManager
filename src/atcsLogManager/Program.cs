@@ -29,8 +29,7 @@ namespace atcsLogManager
             }
 
             var atcsLogFileManager = new LogFileManager(logDirectory);
-            //atcsLogFileManager.ProcessDirectory();
-            atcsLogFileManager.GetATCSLogs();
+            atcsLogFileManager.ProcessDirectory();
         }
     }
 }
