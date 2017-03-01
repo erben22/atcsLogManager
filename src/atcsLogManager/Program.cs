@@ -2,10 +2,17 @@
 
 namespace atcsLogManager
 {
+    /// <summary>
+    /// Main entry for the atcsLogManager program.  Supplied with a directory,
+    /// the program will dive in and process log files it finds.
+    /// </summary>
     class Program
     {
         static void Main(string[] args)
         {
+            // TODO:  Look into a console application argument parsing library.
+            //        This gets us up and going for the moment...
+
             var logDirectory = String.Empty;
 
             if (args.Length >= 1)
@@ -14,22 +21,28 @@ namespace atcsLogManager
             }
             else
             {
-                Console.WriteLine("A log directory is expected.");
+                Console.WriteLine("ERROR:  A log directory argument is expected, exiting.");
                 return;
             }
 
-            if (System.IO.Directory.Exists(logDirectory))
+            if (!System.IO.Directory.Exists(logDirectory))
             {
-                Console.WriteLine("Directory {0} exists.", logDirectory);
-            }
-            else
-            {
-                Console.WriteLine("Directory {0} does not exist.", logDirectory);
+                Console.WriteLine("ERROR:  Directory {0} does not exist, exiting.", logDirectory);
                 return;
             }
 
-            var atcsLogFileManager = new LogFileManager(logDirectory);
-            atcsLogFileManager.ProcessDirectory();
+            try
+            {
+                var atcsLogFileManager = new LogFileManager(logDirectory);
+                atcsLogFileManager.ProcessDirectory();
+            }
+            catch (Exception e)
+            {
+                // TODO:  Figure out possible exceptions and catch those here, alerting
+                //        as necessary.
+
+                Console.WriteLine("ERROR: Exception encountered processing logs - ", e.ToString());
+            }
         }
     }
 }

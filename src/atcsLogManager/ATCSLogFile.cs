@@ -5,17 +5,26 @@ using System.Collections.Generic;
 
 namespace atcsLogManager
 {
+    /// <summary>
+    /// Handler for ATCS log files.
+    /// </summary>
     public class ATCSLogFile
     {
         private string filePath;
-        private ATCSSettings settings = ATCSSettings.Deserialize();
+        private ATCSSettings settings = ATCSSettingsSerializer.Deserialize();
 
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="path">Fully qualified path to an ATCS log file.</param>
         public ATCSLogFile(string path)
         {
             filePath = path;
-            //settings.Serialize();
         }
 
+        /// <summary>
+        /// Property for the name of the log file sans extension.
+        /// </summary>
         public string FileNameWOExtension
         {
             get
@@ -24,6 +33,9 @@ namespace atcsLogManager
             }
         }
 
+        /// <summary>
+        /// Property for the filename of the log file without the full path.
+        /// </summary>
         public string FileName
         {
             get
@@ -32,6 +44,9 @@ namespace atcsLogManager
             }
         }
 
+        /// <summary>
+        /// Property for the log file's directory.
+        /// </summary>
         public string FileDirectory
         {
             get
@@ -40,7 +55,9 @@ namespace atcsLogManager
             }
         }
 
-
+        /// <summary>
+        /// Archive the ATCS log file.
+        /// </summary>
         public void ArchiveFile()
         {
             Console.WriteLine("File is: {0}", FileNameWOExtension);
@@ -81,6 +98,14 @@ namespace atcsLogManager
             BackupLogFile();
         }
 
+        /// <summary>
+        /// Parse the log file name and build a dictionary of the parts.
+        /// </summary>
+        /// <returns>
+        /// Collection that contains keys and values for desired parts of 
+        /// an ATCS log file.  If we cannot process the log file name properly,
+        /// null is returned.
+        /// </returns>
         private Dictionary<string, string> ParseLogFileName()
         {
             const string pattern = @"(\d{4})(\d{2})(\d{2})$";
@@ -101,6 +126,9 @@ namespace atcsLogManager
             return null;
         }
 
+        /// <summary>
+        /// Backup a log file by moving it to our backup directory.
+        /// </summary>
         private void BackupLogFile()
         {
             if (settings.backupLogs)
@@ -119,6 +147,14 @@ namespace atcsLogManager
             }
         }
 
+        /// <summary>
+        /// Determine if the current file is in use.  Sometimes, the ATCS 
+        /// program may have a lock on the log file, so this method attempts
+        /// to detect that and can be used to prevent manipulation in that 
+        /// case.
+        /// </summary>
+        /// <param name="file">Fully qualified path to a file to check.</param>
+        /// <returns>Boolean indicating if the file is in use.</returns>
         private bool IsFileInUse(String file)
         {
             bool isInUse = false;
