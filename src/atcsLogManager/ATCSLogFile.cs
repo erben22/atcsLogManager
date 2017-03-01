@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Text.RegularExpressions;
-using System.IO.Compression;
 using System.Collections.Generic;
+using System.IO.Compression;
+using System.Text.RegularExpressions;
 
 namespace atcsLogManager
 {
