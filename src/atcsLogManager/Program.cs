@@ -3,8 +3,8 @@
 namespace atcsLogManager
 {
     /// <summary>
-    /// Main entry for the atcsLogManager program.  Supplied with a directory,
-    /// the program will dive in and process log files it finds.
+    ///     Main entry for the atcsLogManager program.  Supplied with a directory,
+    ///     the program will dive in and process log files it finds.
     /// </summary>
     class Program
     {
@@ -39,9 +39,10 @@ namespace atcsLogManager
             catch (Exception e)
             {
                 // TODO:  Figure out possible exceptions and catch those here, alerting
-                //        as necessary.
+                //        as necessary.  Eventually will put these messages into a logger
+                //        instead of blasting to the console.
 
-                Console.WriteLine("ERROR: Exception encountered processing logs - ", e.ToString());
+                Console.WriteLine("ERROR: Exception encountered processing logs - {0}", e.ToString());
             }
         }
     }

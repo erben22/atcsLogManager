@@ -1,110 +1,162 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO.Compression;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace atcsLogManager
 {
     /// <summary>
-    /// Handler for ATCS log files.
+    ///     Handler for ATCS log files.
     /// </summary>
     public class ATCSLogFile
     {
         private string filePath;
-        private ATCSSettings settings = ATCSSettingsSerializer.Deserialize();
+        private ATCSSettings settings;
 
         /// <summary>
-        /// Constructor.
+        ///     Constructor.
         /// </summary>
         /// <param name="path">Fully qualified path to an ATCS log file.</param>
         public ATCSLogFile(string path)
         {
             filePath = path;
+
+            // Attempt to obtain settings from a persisted settings file.
+            // If the settings do not exist, create a default settings object
+            // and use that.
+
+            try
+            {
+                settings = ATCSSettingsSerializer.Deserialize();
+            }
+            catch (FileNotFoundException)
+            {
+                settings = new ATCSSettings();
+            }
         }
 
         /// <summary>
-        /// Property for the name of the log file sans extension.
+        ///     Property for the name of the log file sans extension.
         /// </summary>
         public string FileNameWOExtension
         {
             get
             {
-                return System.IO.Path.GetFileNameWithoutExtension(filePath);
+                return Path.GetFileNameWithoutExtension(filePath);
             }
         }
 
         /// <summary>
-        /// Property for the filename of the log file without the full path.
+        ///     Property for the filename of the log file without the full path.
         /// </summary>
         public string FileName
         {
             get
             {
-                return System.IO.Path.GetFileName(filePath);
+                return Path.GetFileName(filePath);
             }
         }
 
         /// <summary>
-        /// Property for the log file's directory.
+        ///     Property for the log file's directory.
         /// </summary>
         public string FileDirectory
         {
             get
             {
-                return System.IO.Path.GetDirectoryName(filePath);
+                return Path.GetDirectoryName(filePath);
             }
         }
 
         /// <summary>
-        /// Archive the ATCS log file.
+        ///     Archive the ATCS log file.
         /// </summary>
         public void ArchiveFile()
         {
-            Console.WriteLine("File is: {0}", FileNameWOExtension);
             var fileNameParts = ParseLogFileName();
+
+            // If we could not obtain the parts of the filename from our
+            // parsing, bail out, not a file we want to process.
 
             if (fileNameParts == null)
             {
+                Console.WriteLine("  Filename {0} is not a supported ATCS log file to archive.",
+                    FileNameWOExtension);
                 return;
             }
 
-            if (fileNameParts["day"] == DateTime.Now.Day.ToString() &&
-                fileNameParts["month"] == DateTime.Now.Month.ToString() &&
-                fileNameParts["year"] == DateTime.Now.Year.ToString())
+            // Do not process the file if the timestamp on the filename is
+            // for the current day.
+
+            if (IsFileForCurrentDay(fileNameParts))
             {
-                Console.WriteLine("  Filename {0} is for the current day, not processing", FileNameWOExtension);
+                Console.WriteLine("  Filename {0} is for the current day, not processing.",
+                    FileNameWOExtension);
                 return;
             }
+
+            // Do not process the file if it is in use.
 
             if (IsFileInUse(filePath))
             {
-                Console.WriteLine("  Filename {0} is in use, not processing", FileNameWOExtension);
+                Console.WriteLine("  Filename {0} is in use, not processing.", 
+                    FileNameWOExtension);
                 return;
             }
 
-            var zipFileName = FileDirectory + System.IO.Path.DirectorySeparatorChar +
+            // Build up the zip file name that will be used for the log file
+            // to be archived into.  This is the YYYYMM portion of the log file
+            // name so all logs for a month are put into the same zip file.
+
+            var zipFileName = FileDirectory + Path.DirectorySeparatorChar +
                 fileNameParts["atcsTerritory"] + fileNameParts["year"] +
                     fileNameParts["month"] + ".zip";
 
-            var zipArchiveMode = System.IO.File.Exists(zipFileName) ? 
+            var zipArchiveMode = File.Exists(zipFileName) ? 
                 ZipArchiveMode.Update : ZipArchiveMode.Create;
 
             using (ZipArchive zipFile = ZipFile.Open(zipFileName, zipArchiveMode))
             {
                 zipFile.CreateEntryFromFile(filePath,
-                    System.IO.Path.GetFileName(filePath));
+                    Path.GetFileName(filePath));
             }
+
+            // TODO:  How should I verify the CreateEntryFromFile method
+            // actually worked before I attempt to back it up or delete it?
+
+            // Backup the log file or delete it once we have archived it.
 
             BackupLogFile();
         }
 
         /// <summary>
-        /// Parse the log file name and build a dictionary of the parts.
+        ///     Determine if the file name being parsed (via its parts collection) is for
+        ///     the current day.
+        /// </summary>
+        /// <param name="fileNameParts">
+        ///     Dictionary that contains keys and values for
+        ///     parts of a file name we are processing.
+        /// </param>
+        /// <returns>
+        ///     Boolean indicating whether the file name parts are for
+        ///     the current day.
+        /// </returns>
+        private bool IsFileForCurrentDay(Dictionary<string, string> fileNameParts)
+        {
+            return (fileNameParts["day"] == DateTime.Now.Day.ToString() &&
+                fileNameParts["month"] == DateTime.Now.Month.ToString() &&
+                    fileNameParts["year"] == DateTime.Now.Year.ToString() ?
+                        true : false);
+        }
+
+        /// <summary>
+        ///     Parse the log file name and build a dictionary of the parts.
         /// </summary>
         /// <returns>
-        /// Collection that contains keys and values for desired parts of 
-        /// an ATCS log file.  If we cannot process the log file name properly,
-        /// null is returned.
+        ///     Collection that contains keys and values for desired parts of 
+        ///     an ATCS log file.  If we cannot process the log file name properly,
+        ///     null is returned.
         /// </returns>
         private Dictionary<string, string> ParseLogFileName()
         {
@@ -127,31 +179,31 @@ namespace atcsLogManager
         }
 
         /// <summary>
-        /// Backup a log file by moving it to our backup directory.
+        ///     Backup a log file by moving it to our backup directory.
         /// </summary>
         private void BackupLogFile()
         {
             if (settings.backupLogs)
             {
-                var backupDir = System.IO.Path.Combine(FileDirectory, "backup");
+                var backupDir = Path.Combine(FileDirectory, "backup");
 
-                System.IO.Directory.CreateDirectory(backupDir);
+                Directory.CreateDirectory(backupDir);
 
-                System.IO.File.Move(filePath, backupDir +
-                    System.IO.Path.DirectorySeparatorChar +
-                        System.IO.Path.GetFileName(filePath));
+                File.Move(filePath, backupDir +
+                    Path.DirectorySeparatorChar +
+                        Path.GetFileName(filePath));
             }
             else
             {
-                System.IO.File.Delete(filePath);
+                File.Delete(filePath);
             }
         }
 
         /// <summary>
-        /// Determine if the current file is in use.  Sometimes, the ATCS 
-        /// program may have a lock on the log file, so this method attempts
-        /// to detect that and can be used to prevent manipulation in that 
-        /// case.
+        ///     Determine if the current file is in use and has exclusive access.  
+        ///     Sometimes, the ATCS program may have a lock on the log file, 
+        ///     so this method attempts to detect that and can be used to prevent 
+        ///     manipulation in that case.
         /// </summary>
         /// <param name="file">Fully qualified path to a file to check.</param>
         /// <returns>Boolean indicating if the file is in use.</returns>
@@ -161,13 +213,16 @@ namespace atcsLogManager
 
             try
             {
-                using (System.IO.FileStream fs = new System.IO.FileStream(
-                    file, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                using (FileStream fs = new FileStream(
+                    file, FileMode.Open, FileAccess.Read))
                 {
-                    isInUse = fs.CanWrite;
+                    // We were able to open the file for reading without an
+                    // exception occurring, so it is not in exclusive use.
+
+                    isInUse = false;
                 }
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
                 isInUse = true;
             }

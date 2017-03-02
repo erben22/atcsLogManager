@@ -1,17 +1,17 @@
 ﻿namespace atcsLogManager
 {
     /// <summary>
-    /// Manager class for processing log files.
+    ///     Manager class for processing log files.
     /// </summary>
     public class LogFileManager
     {
         private string atcsDirectory;
 
         /// <summary>
-        /// Constructor.
+        ///     Constructor.
         /// </summary>
         /// <param name="directory">
-        /// Fully qualified directory path of log files to process.
+        ///     Fully qualified directory path of log files to process.
         /// </param>
         public LogFileManager(string directory)
         {
@@ -19,8 +19,8 @@
         }
 
         /// <summary>
-        /// Process the log directory, applying our desired options to the logs.
-        /// Right now, this consists of archiving the logs.
+        ///     Process the log directory, applying our desired options to the logs.
+        ///     Right now, this consists of archiving the logs.
         /// </summary>
         public void ProcessDirectory()
         {
@@ -34,7 +34,7 @@
         }
 
         /// <summary>
-        /// Get all the ATCS log files from the directory.
+        ///     Get all the ATCS log files from the directory.
         /// </summary>
         /// <returns>Array of log files from our directory.</returns>
         private string[] GetATCSLogs()
